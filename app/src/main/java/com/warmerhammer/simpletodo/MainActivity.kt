@@ -33,9 +33,8 @@ class MainActivity : AppCompatActivity(), DatePickerFragment.OnDateSetListener {
             if (result.resultCode == Activity.RESULT_OK) {
                 val intent = result.data
                 val itemText = intent?.getStringExtra("EditText")
-                val date = intent?.getStringExtra("Date") ?: "TBD"
                 val position = intent?.getIntExtra("Position", 0)
-                listOfTasks[position!!] = Task(itemText!!, date)
+                listOfTasks[position!!].title = itemText!!
                 adapter.notifyItemChanged(position)
 
                 //persist changes
@@ -67,9 +66,9 @@ class MainActivity : AppCompatActivity(), DatePickerFragment.OnDateSetListener {
 
                 val noTasksToDisplay = findViewById<TextView>(R.id.no_tasks_textview)
 
-                if (listOfTasks.isNotEmpty()) {
-                    noTasksToDisplay.visibility = View.GONE
-                } else {
+                if (listOfTasks.isEmpty()) {
+                    findViewById<RecyclerView>(R.id.recyclerView).visibility = View.GONE
+                    findViewById<LinearLayout>(R.id.taskListHeader).visibility = View.GONE
                     noTasksToDisplay.visibility = View.VISIBLE
                 }
             }
@@ -97,7 +96,6 @@ class MainActivity : AppCompatActivity(), DatePickerFragment.OnDateSetListener {
                 listOfTasksIndex = position
                 val datePicker = DatePickerFragment()
                 datePicker.show(supportFragmentManager, "datePicker")
-
             }
         }
 
@@ -141,10 +139,12 @@ class MainActivity : AppCompatActivity(), DatePickerFragment.OnDateSetListener {
 
         if (listOfTasks.isNotEmpty()) {
             recyclerView.visibility = View.VISIBLE
+            findViewById<LinearLayout>(R.id.taskListHeader).visibility = View.VISIBLE
             noTasksToDisplay.visibility = View.GONE
         } else {
             noTasksToDisplay.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            findViewById<LinearLayout>(R.id.taskListHeader).visibility = View.GONE
         }
 
 //        // set up spinner
@@ -185,20 +185,21 @@ class MainActivity : AppCompatActivity(), DatePickerFragment.OnDateSetListener {
 
     override fun onDateSet(date: String?) {
         val newDate = date ?: "TBD"
-        // 1. Build task object with task and date
-        val newTask = Task(userInputTask, newDate)
-
         // 2. Add new task to listOfTasks
         if (listOfTasksIndex == null) {
-            listOfTasks.add(newTask)
+            listOfTasks.add(Task(userInputTask, newDate))
             // Notify adapter that the data list has changed
             adapter.notifyItemInserted(listOfTasks.size - 1)
         } else {
-            listOfTasks[listOfTasksIndex!!] = newTask
+            listOfTasks[listOfTasksIndex!!].date = date!!
             // Notify adapter that data list has changed at specified index
             adapter.notifyItemChanged(listOfTasksIndex!!)
             listOfTasksIndex = null
         }
+
+        findViewById<RecyclerView>(R.id.recyclerView).visibility = View.VISIBLE
+        findViewById<LinearLayout>(R.id.taskListHeader).visibility = View.VISIBLE
+        findViewById<TextView>(R.id.no_tasks_textview).visibility = View.GONE
 
         // 3. Save items to stored file
         saveItems()
